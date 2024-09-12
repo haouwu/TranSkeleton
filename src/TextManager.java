@@ -1,13 +1,19 @@
 public class TextManager {
+    String text;
+    int position;
+
+
     public TextManager(String input) {
+        text = input;
+        position = 0;
     }
 
     public boolean isAtEnd() {
-        return false;
+        return position >= text.length();
     }
 
     public char peekCharacter() {
-        return '~';
+       return text.charAt(position);
     }
 
     public char peekCharacter(int distance) {
@@ -15,6 +21,6 @@ public class TextManager {
     }
 
     public char getCharacter() {
-        return '~';
+        return text.charAt(position++);
     }
 }
