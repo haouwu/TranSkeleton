@@ -41,22 +41,27 @@ public class Lexer {
                 Token token = parseWord();
                 ListOfTokens.add(token);
             }
-            if(C.toString().equals(".")){
+
+            if(Character.toString(C).equals(".")){
                 text.position++;
                 C = text.peekCharacter();
                 text.position--;
-                if (Character.isDigit(C)){
-                    parseNumber();
-                }else{
-                    C = text.peekCharacter();
+                if(Character.isDigit(C)){
+                    Token token = parseNumber();
+                    ListOfTokens.add(token);
+                    if(!text.isAtEnd()){
+                        text.getCharacter();
+                        C = text.peekCharacter();
+                    }
                 }
-
             }
-            if(keywords.containsKey(Character.toString(C))){
+
+            if(keywords.containsKey(Character.toString(C)) && !text.isAtEnd()){
                 Token token = parsePunctuation();
                 ListOfTokens.add(token);
             }
-            if(Character.isDigit(C)){
+
+            if(Character.isDigit(C) && !text.isAtEnd()){
                 Token token = parseNumber();
                 ListOfTokens.add(token);
             }
@@ -85,10 +90,12 @@ public class Lexer {
     public Token parseNumber() throws Exception{
         StringBuilder CurrentWord = new StringBuilder();
         Character C = text.peekCharacter();
-        if(C.toString().equals(".")){
+        if(Character.toString(C).equals(".")){
             CurrentWord.append(C);
+            text.getCharacter();
             C = text.peekCharacter();
         }
+
         while(!text.isAtEnd() && Character.isDigit(C)){
             CurrentWord.append(C);
             C = text.getCharacter();
@@ -97,22 +104,24 @@ public class Lexer {
             }
         }
 
-        if (keywords.containsKey(".")) {
+        if (keywords.containsKey(C.toString())) {
             CurrentWord.append(C);
             text.position++;
-            C = text.peekCharacter();
-            while(!text.isAtEnd() && Character.isDigit(C)){
-                CurrentWord.append(C);
-                C = text.getCharacter();
-                if(!text.isAtEnd()){
-                    C = text.peekCharacter();
+            if(!text.isAtEnd()){
+                C = text.peekCharacter();
+                while(!text.isAtEnd() && Character.isDigit(C)){
+                    CurrentWord.append(C);
+                    C = text.getCharacter();
+                    if(!text.isAtEnd()){
+                        C = text.peekCharacter();
+                    }
                 }
             }
+
 
         }
         return new Token(Token.TokenTypes.NUMBER, 0, 0, CurrentWord.toString());
     }
-
 
     public Token parsePunctuation() throws Exception{
         StringBuilder CurrentWord = new StringBuilder();
@@ -128,6 +137,4 @@ public class Lexer {
         String Buffer = CurrentWord.toString();
         return new Token(keywords.get(Buffer), 0, 0);
     }
-
-
 }

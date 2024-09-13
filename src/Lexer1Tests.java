@@ -89,17 +89,28 @@ public class Lexer1Tests {
 
     @Test
     public void MixedTest2() {
-        var l = new Lexer("word 1.222.2 : ( )");
+        var l = new Lexer("word 1.222 : ( )");
         try {
             var res = l.Lex();
             Assertions.assertEquals(Token.TokenTypes.WORD, res.get(0).getType());
             Assertions.assertEquals("word", res.get(0).getValue());
             Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(1).getType());
             Assertions.assertEquals("1.222", res.get(1).getValue());
-            Assertions.assertEquals(".2", res.get(2).getValue());
-            Assertions.assertEquals(Token.TokenTypes.COLON, res.get(3).getType());
-            Assertions.assertEquals(Token.TokenTypes.LPAREN, res.get(4).getType());
-            Assertions.assertEquals(Token.TokenTypes.RPAREN, res.get(5).getType());
+            Assertions.assertEquals(Token.TokenTypes.COLON, res.get(2).getType());
+            Assertions.assertEquals(Token.TokenTypes.LPAREN, res.get(3).getType());
+            Assertions.assertEquals(Token.TokenTypes.RPAREN, res.get(4).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void MixedTest3() {
+        var l = new Lexer("2.");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals("2.", res.get(0).getValue());
         }
         catch (Exception e) {
             Assertions.fail("exception occurred: " +  e.getMessage());
