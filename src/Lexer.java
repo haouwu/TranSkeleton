@@ -5,6 +5,9 @@ import java.util.HashMap;
 public class Lexer {
     private final TextManager text;
     private final HashMap<String, Token.TokenTypes> keywords;
+    private int lineNumber;
+    private int columnNumber;
+    private int previousColumn = 0;
 
     public Lexer(String input) {
         text = new TextManager(input);
@@ -30,6 +33,23 @@ public class Lexer {
         keywords.put("<=", Token.TokenTypes.LESSTHANEQUAL);
         keywords.put(">", Token.TokenTypes.GREATERTHAN);
         keywords.put(">=", Token.TokenTypes.GREATERTHANEQUAL);
+
+        keywords.put("accessor", Token.TokenTypes.ACCESSOR);
+        keywords.put("mutator", Token.TokenTypes.MUTATOR);
+        keywords.put("implements", Token.TokenTypes.IMPLEMENTS);
+        keywords.put("class", Token.TokenTypes.CLASS);
+        keywords.put("interface", Token.TokenTypes.INTERFACE);
+        keywords.put("loop", Token.TokenTypes.LOOP);
+        keywords.put("if", Token.TokenTypes.IF);
+        keywords.put("else", Token.TokenTypes.ELSE);
+
+        keywords.put("true", Token.TokenTypes.TRUE);
+        keywords.put("false", Token.TokenTypes.FALSE);
+        keywords.put("new", Token.TokenTypes.NEW);
+
+        keywords.put("\"", Token.TokenTypes.QUOTEDSTRING);
+        keywords.put("'", Token.TokenTypes.QUOTEDCHARACTER);
+        keywords.put("\n", Token.TokenTypes.NEWLINE);
     }
 
     public List<Token> Lex() throws Exception {
@@ -37,36 +57,60 @@ public class Lexer {
 
         while(!text.isAtEnd()){
             Character C = text.peekCharacter();
-            if (Character.isLetter(C)){
-                Token token = parseWord();
-                ListOfTokens.add(token);
+            if(previousColumn == 4 && Character.isLetter(C) && columnNumber == 0){
+                ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
             }
+            if (Character.isLetter(C)){
+                ListOfTokens.add(parseWord());
 
-            if(Character.toString(C).equals(".")){
+            }else if(C == '.') {
                 text.position++;
-                C = text.peekCharacter();
-                text.position--;
-                if(Character.isDigit(C)){
-                    Token token = parseNumber();
-                    ListOfTokens.add(token);
-                    if(!text.isAtEnd()){
-                        text.getCharacter();
-                        C = text.peekCharacter();
+                columnNumber++;
+                if (!text.isAtEnd()) {
+                    C = text.peekCharacter();
+                    text.position--;
+                    columnNumber--;
+                    if (Character.isDigit(C)) {
+                        ListOfTokens.add(parseNumber());
+                    } else {
+                        ListOfTokens.add(parsePunctuation());
+                    }
+                } else {
+                    text.position--;
+                    columnNumber--;
+                    ListOfTokens.add(parsePunctuation());
+                }
+            }else if(C.toString().equals("\"") || C.toString().equals("'")){
+                ListOfTokens.add(parseQuotated());
+
+            }else if(keywords.containsKey(Character.toString(C))){
+                ListOfTokens.add(parsePunctuation());
+
+            }else if(Character.isDigit(C)){
+                ListOfTokens.add(parseNumber());
+
+            }else if(columnNumber == 0){
+
+                while(Character.isWhitespace(C)){
+                    C = text.getCharacter();
+                    C = text.peekCharacter();
+                    columnNumber++;
+                    if(columnNumber % 4 == 0){
+                        ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
                     }
                 }
-            }
+                if(previousColumn > columnNumber){
+                    ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+                }
+                if(!Character.isWhitespace(C) && columnNumber%4 != 0){
+                    columnNumber -= columnNumber %4;
+                    text.position -= columnNumber %4;
+                }
 
-            if(keywords.containsKey(Character.toString(C)) && !text.isAtEnd()){
-                Token token = parsePunctuation();
-                ListOfTokens.add(token);
-            }
-
-            if(Character.isDigit(C) && !text.isAtEnd()){
-                Token token = parseNumber();
-                ListOfTokens.add(token);
-            }
-            if (Character.isWhitespace(C)){
+                previousColumn = columnNumber;
+            }else if (Character.isWhitespace(C)) {
                 text.position++;
+                columnNumber++;
             }
         }
 
@@ -76,65 +120,124 @@ public class Lexer {
     public Token parseWord() throws Exception{
         StringBuilder CurrentWord = new StringBuilder();
         Character C = text.peekCharacter();
+
         while(!text.isAtEnd() && Character.isLetter(C)){
             CurrentWord.append(C);
             C = text.getCharacter();
-
+            columnNumber++;
             if(!text.isAtEnd()){
                 C = text.peekCharacter();
             }
         }
-        return new Token(Token.TokenTypes.WORD, 0, 0, CurrentWord.toString());
+
+        if(keywords.containsKey(CurrentWord.toString())){
+            return new Token(keywords.get(CurrentWord.toString()), lineNumber, columnNumber);
+        }else{
+            return new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, CurrentWord.toString());
+        }
     }
 
     public Token parseNumber() throws Exception{
         StringBuilder CurrentWord = new StringBuilder();
         Character C = text.peekCharacter();
-        if(Character.toString(C).equals(".")){
+        boolean dotUsed = false;
+
+        if(C == '.'){
             CurrentWord.append(C);
             text.getCharacter();
+            columnNumber++;
             C = text.peekCharacter();
+            dotUsed = true;
         }
 
         while(!text.isAtEnd() && Character.isDigit(C)){
             CurrentWord.append(C);
             C = text.getCharacter();
+            columnNumber++;
             if(!text.isAtEnd()){
                 C = text.peekCharacter();
             }
         }
 
-        if (keywords.containsKey(C.toString())) {
+        if (keywords.containsKey(C.toString()) && C == '.' && !dotUsed) {
             CurrentWord.append(C);
-            text.position++;
+            text.getCharacter();
+            columnNumber++;
+            // if not at end loop
             if(!text.isAtEnd()){
                 C = text.peekCharacter();
                 while(!text.isAtEnd() && Character.isDigit(C)){
                     CurrentWord.append(C);
                     C = text.getCharacter();
+                    columnNumber++;
                     if(!text.isAtEnd()){
                         C = text.peekCharacter();
                     }
                 }
             }
-
-
         }
-        return new Token(Token.TokenTypes.NUMBER, 0, 0, CurrentWord.toString());
+        return new Token(Token.TokenTypes.NUMBER, lineNumber, columnNumber, CurrentWord.toString());
     }
 
     public Token parsePunctuation() throws Exception{
         StringBuilder CurrentWord = new StringBuilder();
-        Character C = text.peekCharacter();
-        while(!text.isAtEnd() && keywords.containsKey(Character.toString(C))){
-            CurrentWord.append(C);
-            C = text.getCharacter();
+        StringBuilder Buffer = new StringBuilder();
 
-            if(!text.isAtEnd()){
-                C = text.peekCharacter();
+        //consumes first punctuation goes to next
+        Character C = text.getCharacter();
+        columnNumber++;
+        CurrentWord.append(C);
+
+        if(!text.isAtEnd()){
+            C = text.peekCharacter();
+
+            //check the first character plus second
+            Buffer.append(CurrentWord);
+            Buffer.append(C);
+            if(keywords.containsKey(Buffer.toString())){
+                C = text.getCharacter();
+                columnNumber++;
+                CurrentWord.append(C);
+            }
+            if(keywords.containsKey(CurrentWord.toString()) && CurrentWord.toString().equals("\n")){
+                lineNumber ++;
+                columnNumber = 0;
+            }
+
+        }
+        return new Token(keywords.get(CurrentWord.toString()), lineNumber, columnNumber);
+    }
+
+    public Token parseQuotated() throws Exception {
+        StringBuilder currentWord = new StringBuilder();
+        Character C = text.peekCharacter();
+
+        if(C.toString().equals("\"")) {
+            C = text.getCharacter();
+            C = text.peekCharacter();
+            while (!C.toString().equals("\"")) {
+                C = text.getCharacter();
+                if(!C.toString().equals("\"")) {
+                    currentWord.append(C);
+                }
             }
         }
-        String Buffer = CurrentWord.toString();
-        return new Token(keywords.get(Buffer), 0, 0);
+
+        if(C.toString().equals("'")) {
+            C = text.getCharacter();
+            C = text.peekCharacter();
+            while (!C.toString().equals("'")) {
+                C = text.getCharacter();
+                if(!C.toString().equals("'")) {
+                    currentWord.append(C);
+                }
+            }
+        }
+
+        if(C.toString().equals("\"")) {
+            return new Token(Token.TokenTypes.QUOTEDSTRING, lineNumber, columnNumber, currentWord.toString());
+        }else {
+            return new Token(Token.TokenTypes.QUOTEDCHARACTER, lineNumber, columnNumber, currentWord.toString());
+        }
     }
 }

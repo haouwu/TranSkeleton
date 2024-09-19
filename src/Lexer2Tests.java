@@ -8,11 +8,36 @@ public class Lexer2Tests {
         var l = new Lexer(
                 "loop keepGoing\n" +
                         "    if n >= 15\n" +
-                        "        keepGoing = false\n"
+                        "        keepGoing = false\n" +
+                        "    hello welcome\n" +
+                        "final the end"
         );
         try {
             var res = l.Lex();
-            Assertions.assertEquals(16, res.size());
+            Assertions.assertEquals(Token.TokenTypes.LOOP, res.get(0).getType());
+            Assertions.assertEquals("keepGoing", res.get(1).getValue());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(2).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(3).getType());
+            Assertions.assertEquals(Token.TokenTypes.IF, res.get(4).getType());
+            Assertions.assertEquals("n", res.get(5).getValue());
+            Assertions.assertEquals(Token.TokenTypes.GREATERTHANEQUAL, res.get(6).getType());
+            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(7).getType());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(8).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(9).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(10).getType());
+            Assertions.assertEquals("keepGoing", res.get(11).getValue());
+            Assertions.assertEquals(Token.TokenTypes.ASSIGN, res.get(12).getType());
+            Assertions.assertEquals(Token.TokenTypes.FALSE, res.get(13).getType());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(14).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(15).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(16).getType());
+            Assertions.assertEquals("hello", res.get(17).getValue());
+            Assertions.assertEquals("welcome", res.get(18).getValue());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(19).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(20).getType());
+            Assertions.assertEquals("final", res.get(21).getValue());
+            Assertions.assertEquals("the", res.get(22).getValue());
+            Assertions.assertEquals("end", res.get(23).getValue());
         }
         catch (Exception e) {
             Assertions.fail("exception occurred: " +  e.getMessage());

@@ -107,13 +107,77 @@ public class Lexer1Tests {
 
     @Test
     public void MixedTest3() {
-        var l = new Lexer("2.");
+        var l = new Lexer(".2.2");
         try {
             var res = l.Lex();
-            Assertions.assertEquals("2.", res.get(0).getValue());
+            Assertions.assertEquals(".2", res.get(0).getValue());
+            Assertions.assertEquals(".2", res.get(1).getValue());
         }
         catch (Exception e) {
             Assertions.fail("exception occurred: " +  e.getMessage());
         }
     }
+
+    @Test
+    public void MixedTest4() {
+        var l = new Lexer("<= ==.");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals(Token.TokenTypes.LESSTHANEQUAL, res.get(0).getType());
+            Assertions.assertEquals(Token.TokenTypes.EQUAL, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.DOT, res.get(2).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void MixedTest5() {
+        var l = new Lexer("x=1");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals("x", res.get(0).getValue());
+            Assertions.assertEquals(Token.TokenTypes.ASSIGN, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(2).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void MixedTest6() {
+        var l = new Lexer("xxx \n xxx");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals("xxx", res.get(0).getValue());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(1).getType());
+            Assertions.assertEquals("xxx", res.get(2).getValue());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void MixedTest7() {
+        var l = new Lexer("line. \n This is another line.");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals("line", res.get(0).getValue());
+            Assertions.assertEquals(Token.TokenTypes.DOT, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(2).getType());
+            Assertions.assertEquals("This", res.get(3).getValue());
+            Assertions.assertEquals("is", res.get(4).getValue());
+            Assertions.assertEquals("another", res.get(5).getValue());
+            Assertions.assertEquals("line", res.get(6).getValue());
+            Assertions.assertEquals(Token.TokenTypes.DOT, res.get(7).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+
 }
