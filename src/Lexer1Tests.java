@@ -179,5 +179,25 @@ public class Lexer1Tests {
         }
     }
 
+    @Test
+    public void MixedTest8() {
+        var l = new Lexer("line. \n This is another line. {ABC} DFDFDFDFDF {DSDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD}");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals("line", res.get(0).getValue());
+            Assertions.assertEquals(Token.TokenTypes.DOT, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(2).getType());
+            Assertions.assertEquals("This", res.get(3).getValue());
+            Assertions.assertEquals("is", res.get(4).getValue());
+            Assertions.assertEquals("another", res.get(5).getValue());
+            Assertions.assertEquals("line", res.get(6).getValue());
+            Assertions.assertEquals(Token.TokenTypes.DOT, res.get(7).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(8).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
 
 }

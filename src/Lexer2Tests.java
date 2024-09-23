@@ -8,9 +8,11 @@ public class Lexer2Tests {
         var l = new Lexer(
                 "loop keepGoing\n" +
                         "    if n >= 15\n" +
-                        "        keepGoing = false\n" +
-                        "    hello welcome\n" +
-                        "final the end"
+                        "        keepGoing = false {222222222222222222} \n" +
+                        "    hello welcome {dsdsdsdsdqweqwew123394569970-3=-;.;..;./}\n" +
+                        "final the end" +
+                        "{DSDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD}"
+
         );
         try {
             var res = l.Lex();
@@ -92,21 +94,96 @@ public class Lexer2Tests {
 
     @Test
     public void QuotedStringLexerTest() {
-        var l = new Lexer("test \"hello\" \"there\" 1.2");
+        var l = new Lexer("test \"hello\" \"there\" '7' 1.2");
         try {
             var res = l.Lex();
-            Assertions.assertEquals(4, res.size());
             Assertions.assertEquals(Token.TokenTypes.WORD, res.get(0).getType());
             Assertions.assertEquals("test", res.get(0).getValue());
             Assertions.assertEquals(Token.TokenTypes.QUOTEDSTRING, res.get(1).getType());
             Assertions.assertEquals("hello", res.get(1).getValue());
             Assertions.assertEquals(Token.TokenTypes.QUOTEDSTRING, res.get(2).getType());
             Assertions.assertEquals("there", res.get(2).getValue());
-            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(3).getType());
-            Assertions.assertEquals("1.2", res.get(3).getValue());
+            Assertions.assertEquals(Token.TokenTypes.QUOTEDCHARACTER, res.get(3).getType());
+            Assertions.assertEquals("7", res.get(3).getValue());
+            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(4).getType());
+            Assertions.assertEquals("1.2", res.get(4).getValue());
         }
         catch (Exception e) {
             Assertions.fail("exception occurred: " +  e.getMessage());
         }
     }
+
+    @Test
+    public void LexerTest() {
+        var l = new Lexer("|| && ! {dddddddddddddd}");
+        try {
+            var res = l.Lex();
+
+            Assertions.assertEquals(3, res.size());
+            Assertions.assertEquals(Token.TokenTypes.OR, res.get(0).getType());
+            Assertions.assertEquals(Token.TokenTypes.AND, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.NOT, res.get(2).getType());
+
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void LexerTest2() {
+        var l = new Lexer(
+                "            x=x-1\n" +
+                "w"
+                );
+        try {
+            var res = l.Lex();
+
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(0).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(2).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(3).getType());
+            Assertions.assertEquals(Token.TokenTypes.ASSIGN, res.get(4).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(5).getType());
+            Assertions.assertEquals(Token.TokenTypes.MINUS, res.get(6).getType());
+            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(7).getType());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(8).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(9).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(10).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(11).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(12).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void LexerTest3() {
+        var l = new Lexer(
+                "            x=x-1\n" +
+                        "    w"
+        );
+        try {
+            var res = l.Lex();
+
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(0).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(2).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(3).getType());
+            Assertions.assertEquals(Token.TokenTypes.ASSIGN, res.get(4).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(5).getType());
+            Assertions.assertEquals(Token.TokenTypes.MINUS, res.get(6).getType());
+            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(7).getType());
+            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(8).getType());
+            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(9).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(10).getType());
+            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(11).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(12).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
 }

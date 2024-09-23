@@ -8,11 +8,12 @@ public class Lexer {
     private int lineNumber;
     private int columnNumber;
     private int previousColumn = 0;
+    private int numberOfDedent;
 
     public Lexer(String input) {
         text = new TextManager(input);
-
         keywords = new HashMap<>();
+
         keywords.put("=", Token.TokenTypes.ASSIGN);
         keywords.put("(", Token.TokenTypes.LPAREN);
         keywords.put(")", Token.TokenTypes.RPAREN);
@@ -33,6 +34,8 @@ public class Lexer {
         keywords.put("<=", Token.TokenTypes.LESSTHANEQUAL);
         keywords.put(">", Token.TokenTypes.GREATERTHAN);
         keywords.put(">=", Token.TokenTypes.GREATERTHANEQUAL);
+        keywords.put("&&", Token.TokenTypes.AND);
+        keywords.put("||", Token.TokenTypes.OR);
 
         keywords.put("accessor", Token.TokenTypes.ACCESSOR);
         keywords.put("mutator", Token.TokenTypes.MUTATOR);
@@ -43,6 +46,10 @@ public class Lexer {
         keywords.put("if", Token.TokenTypes.IF);
         keywords.put("else", Token.TokenTypes.ELSE);
 
+        keywords.put("private", Token.TokenTypes.PRIVATE);
+        keywords.put("shared", Token.TokenTypes.SHARED);
+        keywords.put("construct", Token.TokenTypes.CONSTRUCT);
+
         keywords.put("true", Token.TokenTypes.TRUE);
         keywords.put("false", Token.TokenTypes.FALSE);
         keywords.put("new", Token.TokenTypes.NEW);
@@ -50,6 +57,7 @@ public class Lexer {
         keywords.put("\"", Token.TokenTypes.QUOTEDSTRING);
         keywords.put("'", Token.TokenTypes.QUOTEDCHARACTER);
         keywords.put("\n", Token.TokenTypes.NEWLINE);
+
     }
 
     public List<Token> Lex() throws Exception {
@@ -57,8 +65,11 @@ public class Lexer {
 
         while(!text.isAtEnd()){
             Character C = text.peekCharacter();
-            if(previousColumn == 4 && Character.isLetter(C) && columnNumber == 0){
-                ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+            if(previousColumn > columnNumber && !Character.isWhitespace(C) && columnNumber == 0){
+                numberOfDedent = previousColumn /4;
+                for(int i = 0; i < numberOfDedent; i++){
+                    ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+                }
             }
             if (Character.isLetter(C)){
                 ListOfTokens.add(parseWord());
@@ -80,10 +91,15 @@ public class Lexer {
                     columnNumber--;
                     ListOfTokens.add(parsePunctuation());
                 }
-            }else if(C.toString().equals("\"") || C.toString().equals("'")){
+
+            }else if(C.toString().equals("\"") || C.toString().equals("'")) {
                 ListOfTokens.add(parseQuotated());
 
-            }else if(keywords.containsKey(Character.toString(C))){
+            }else if(C.toString().equals("{")) {
+                while (!C.toString().equals("}")) {
+                    C = text.getCharacter();
+                }
+            }else if(keywords.containsKey(Character.toString(C)) || C.toString().equals("|") || C.toString().equals("&")){
                 ListOfTokens.add(parsePunctuation());
 
             }else if(Character.isDigit(C)){
@@ -99,13 +115,16 @@ public class Lexer {
                         ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
                     }
                 }
-                if(previousColumn > columnNumber){
-                    ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
-                }
                 if(!Character.isWhitespace(C) && columnNumber%4 != 0){
-                    columnNumber -= columnNumber %4;
-                    text.position -= columnNumber %4;
+                    throw new SyntaxErrorException("",lineNumber,columnNumber);
                 }
+                numberOfDedent = (previousColumn - columnNumber)/4;
+                if(numberOfDedent > 0){
+                    for(int i=0 ; i < numberOfDedent ; i++){
+                        ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+                    }
+                }
+
 
                 previousColumn = columnNumber;
             }else if (Character.isWhitespace(C)) {
@@ -203,7 +222,6 @@ public class Lexer {
                 lineNumber ++;
                 columnNumber = 0;
             }
-
         }
         return new Token(keywords.get(CurrentWord.toString()), lineNumber, columnNumber);
     }
@@ -226,12 +244,13 @@ public class Lexer {
         if(C.toString().equals("'")) {
             C = text.getCharacter();
             C = text.peekCharacter();
-            while (!C.toString().equals("'")) {
-                C = text.getCharacter();
-                if(!C.toString().equals("'")) {
-                    currentWord.append(C);
-                }
+            currentWord.append(C);
+            C = text.getCharacter();
+            C = text.peekCharacter();
+            if(!C.toString().equals("'")) {
+                throw new SyntaxErrorException("",lineNumber,columnNumber);
             }
+            text.getCharacter();
         }
 
         if(C.toString().equals("\"")) {
