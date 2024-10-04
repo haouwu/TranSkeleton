@@ -5,10 +5,10 @@ import java.util.HashMap;
 public class Lexer {
     private final TextManager text;
     private final HashMap<String, Token.TokenTypes> keywords;
-    private int lineNumber;
+    private int lineNumber = 1;
     private int columnNumber;
     private int previousColumn = 0;
-    private int numberOfDedent;
+    private int indentLevel = 0;
 
     public Lexer(String input) {
         text = new TextManager(input);
@@ -26,6 +26,7 @@ public class Lexer {
         keywords.put("/", Token.TokenTypes.DIVIDE);
         keywords.put("%", Token.TokenTypes.MODULO);
         keywords.put(",", Token.TokenTypes.COMMA);
+
 
         keywords.put("==", Token.TokenTypes.EQUAL);
         keywords.put("!", Token.TokenTypes.NOT);
@@ -65,11 +66,12 @@ public class Lexer {
 
         while(!text.isAtEnd()){
             Character C = text.peekCharacter();
-            if(previousColumn > columnNumber && !Character.isWhitespace(C) && columnNumber == 0){
-                numberOfDedent = previousColumn /4;
-                for(int i = 0; i < numberOfDedent; i++){
+            if( previousColumn > columnNumber && !Character.isWhitespace(C) && columnNumber == 0){
+                for(int i = indentLevel; i > 0; i--){
                     ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+                    indentLevel--;
                 }
+                previousColumn = columnNumber;
             }
             if (Character.isLetter(C)){
                 ListOfTokens.add(parseWord());
@@ -111,25 +113,34 @@ public class Lexer {
                     C = text.getCharacter();
                     C = text.peekCharacter();
                     columnNumber++;
-                    if(columnNumber % 4 == 0){
+                    if(previousColumn < columnNumber && columnNumber % 4 == 0){
                         ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
+                        indentLevel++;
                     }
                 }
                 if(!Character.isWhitespace(C) && columnNumber%4 != 0){
                     throw new SyntaxErrorException("",lineNumber,columnNumber);
                 }
-                numberOfDedent = (previousColumn - columnNumber)/4;
-                if(numberOfDedent > 0){
-                    for(int i=0 ; i < numberOfDedent ; i++){
-                        ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+
+                if(previousColumn > columnNumber) {
+                    int CurrentIndents = (previousColumn - columnNumber) / 4;
+                    if(CurrentIndents < indentLevel){
+                        for(int i=0 ; i < CurrentIndents; i++){
+                            ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+                            indentLevel--;
+                        }
                     }
                 }
-
 
                 previousColumn = columnNumber;
             }else if (Character.isWhitespace(C)) {
                 text.position++;
                 columnNumber++;
+            }
+        }
+        if(indentLevel > 0){
+            for(int i=0 ; i < indentLevel; i++){
+                ListOfTokens.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
             }
         }
 

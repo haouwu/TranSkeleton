@@ -162,7 +162,7 @@ public class Lexer1Tests {
 
     @Test
     public void MixedTest7() {
-        var l = new Lexer("line. \n This is another line.");
+        var l = new Lexer("line. \nThis is another line.");
         try {
             var res = l.Lex();
             Assertions.assertEquals("line", res.get(0).getValue());
@@ -181,7 +181,7 @@ public class Lexer1Tests {
 
     @Test
     public void MixedTest8() {
-        var l = new Lexer("line. \n This is another line. {ABC} DFDFDFDFDF {DSDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD}");
+        var l = new Lexer("line. \nThis is another line. {ABC} DFDFDFDFDF {DSDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD}");
         try {
             var res = l.Lex();
             Assertions.assertEquals("line", res.get(0).getValue());
@@ -193,6 +193,22 @@ public class Lexer1Tests {
             Assertions.assertEquals("line", res.get(6).getValue());
             Assertions.assertEquals(Token.TokenTypes.DOT, res.get(7).getType());
             Assertions.assertEquals(Token.TokenTypes.WORD, res.get(8).getType());
+        }
+        catch (Exception e) {
+            Assertions.fail("exception occurred: " +  e.getMessage());
+        }
+    }
+
+    @Test
+    public void MixedTest9() {
+        var l = new Lexer("shared class ClassNode implements Node");
+        try {
+            var res = l.Lex();
+            Assertions.assertEquals(Token.TokenTypes.SHARED, res.get(0).getType());
+            Assertions.assertEquals(Token.TokenTypes.CLASS, res.get(1).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(2).getType());
+            Assertions.assertEquals(Token.TokenTypes.IMPLEMENTS, res.get(3).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(4).getType());
         }
         catch (Exception e) {
             Assertions.fail("exception occurred: " +  e.getMessage());
