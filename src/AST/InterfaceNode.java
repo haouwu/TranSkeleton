@@ -8,6 +8,8 @@ public class InterfaceNode implements Node {
     public List<MethodHeaderNode> methods = new ArrayList<>();
 
     public InterfaceNode(String name, List<MethodHeaderNode> methods) {
+        this.name = name;
+        this.methods = methods;
     }
 
     @Override

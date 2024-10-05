@@ -7,6 +7,7 @@ public class TranNode {
     public List<ClassNode> Classes = new LinkedList<>();
     public List<InterfaceNode> Interfaces = new LinkedList<>();
 
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

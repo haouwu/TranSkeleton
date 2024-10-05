@@ -10,6 +10,9 @@ public class MethodHeaderNode {
     public List<VariableDeclarationNode> returns = new ArrayList<>();
 
     public MethodHeaderNode(String word, ArrayList<VariableDeclarationNode> parameters, ArrayList<VariableDeclarationNode> returns) {
+        this.name = word;
+        this.parameters = parameters;
+        this.returns = returns;
     }
 
     @Override

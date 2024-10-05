@@ -7,6 +7,8 @@ public class VariableDeclarationNode implements Node {
     public String name;
 
     public VariableDeclarationNode(String type, String name) {
+        this.type = type;
+        this.name = name;
     }
 
     @Override

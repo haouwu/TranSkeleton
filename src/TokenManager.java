@@ -15,28 +15,28 @@ public class TokenManager {
     }
 
     public Optional<Token> matchAndRemove(Token.TokenTypes t) {
-        if(t.equals(tokenList.get(position ++).getType())) {
-            Token removedToken = tokenList.get(position ++);
-            tokenList.remove(position++);
+        if(t.equals(tokenList.get(position).getType())) {
+            Token removedToken = tokenList.get(position);
+            tokenList.remove(position);
             return Optional.ofNullable(removedToken);
         }
         return Optional.empty();
     }
 
-    public Optional<Token> peek() {
-        return Optional.ofNullable(tokenList.get(position++));
+    public Optional<Token> peek(int i) {
+        return Optional.ofNullable(tokenList.get(position + i));
     }
 
     public boolean nextTwoTokensMatch(Token.TokenTypes first, Token.TokenTypes second) {
-        if(first.equals(second)) {
-            position++;
-            return true;
+        if(matchAndRemove(first).isPresent()) {
+            return matchAndRemove(second).isPresent();
         }
         return false;
+
     }
 
-    public int getCurrentPosition() {
-        return position;
+    public int getCurrentLine() {
+        return tokenList.get(position).getLineNumber();
     }
 
     public int getCurrentColumnNumber() {
