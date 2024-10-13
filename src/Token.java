@@ -11,7 +11,7 @@ public class Token {
         QUOTEDSTRING, QUOTEDCHARACTER,
         TRUE, NEW, FALSE,
         PRIVATE, SHARED, CONSTRUCT,
-        AND, OR, NOT
+        AND, OR, NOT;
     }
 
     private Optional<String> value;

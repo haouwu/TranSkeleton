@@ -108,7 +108,13 @@ public class Lexer {
                 ListOfTokens.add(parseNumber());
 
             }else if(columnNumber == 0){
-
+                while(C.toString().equals("\t")){
+                    columnNumber += 4;
+                    text.position ++;
+                    C = text.peekCharacter();
+                    ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
+                    indentLevel++;
+                }
                 while(Character.isWhitespace(C)){
                     C = text.getCharacter();
                     C = text.peekCharacter();
@@ -119,7 +125,7 @@ public class Lexer {
                     }
                 }
                 if(!Character.isWhitespace(C) && columnNumber%4 != 0){
-                    throw new SyntaxErrorException("",lineNumber,columnNumber);
+                    throw new SyntaxErrorException("Indent error",lineNumber,columnNumber);
                 }
 
                 if(previousColumn > columnNumber) {

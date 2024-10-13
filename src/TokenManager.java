@@ -24,7 +24,10 @@ public class TokenManager {
     }
 
     public Optional<Token> peek(int i) {
-        return Optional.ofNullable(tokenList.get(position + i));
+        if(i <= tokenList.size()) {
+            return Optional.ofNullable(tokenList.get(position + i));
+        }
+        return Optional.empty();
     }
 
     public boolean nextTwoTokensMatch(Token.TokenTypes first, Token.TokenTypes second) {
