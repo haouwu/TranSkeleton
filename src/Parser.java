@@ -185,14 +185,6 @@ public class Parser {
         return method;
     }
 
-    /*
-    private Optional<MethodCallStatementNode> methodCallStatementNode() throws SyntaxErrorException {
-        Optional<MethodCallStatementNode> methodCall = Optional.of(new MethodCallStatementNode());
-        Optional<Token> nameCheck = tokens.matchAndRemove(Token.TokenTypes.WORD);
-
-    }
-     */
-
     private Optional<MemberNode> memberNode() throws SyntaxErrorException {
         Optional<MemberNode> member = Optional.of(new MemberNode());
         Optional<VariableDeclarationNode> variableCheck = VariableDeclarationNode();
@@ -236,6 +228,7 @@ public class Parser {
         if(tokens.matchAndRemove(Token.TokenTypes.LOOP).isPresent()){
             return loopNode();
         }
+        Optional<StatementNode> disambiguate = disambiguate();
         return Optional.empty();
     }
 
@@ -275,29 +268,155 @@ public class Parser {
         return elseNode;
     }
 
-    private Optional<BooleanOpNode> booleanOpNode() throws SyntaxErrorException {
+     */
 
+    private Optional<ExpressionNode> expressionNode() throws SyntaxErrorException {
+        Optional<VariableReferenceNode> variableCheck = VariableReferenceNode();
+        if(variableCheck.isPresent()) {
+            return Optional.of(variableCheck.get());
+        }
+        return Optional.empty();
     }
 
-    private Optional<BooleanOpNode> BooleanOpNode() throws SyntaxErrorException {
+    private Optional<BooleanOpNode> booleanOpNode() throws SyntaxErrorException {
         Optional<BooleanOpNode> BooleanOp = Optional.of(new BooleanOpNode());
-        Optional<Token> nameCheck = tokens.matchAndRemove(Token.TokenTypes.WORD);
-        if(nameCheck.isEmpty()){
-            throw new SyntaxErrorException("boolean requires a name",0,0);
+        Optional<CompareNode> compareCheck = compareNode();
+        if(compareCheck.isPresent()) {
+            BooleanOp.get().left = compareCheck.get();
+            if(tokens.matchAndRemove(Token.TokenTypes.AND).isPresent()){
+                BooleanOp.get().op = BooleanOpNode.BooleanOperations.and;
+            }else if(tokens.matchAndRemove(Token.TokenTypes.OR).isPresent()){
+                BooleanOp.get().op = BooleanOpNode.BooleanOperations.or;
+            }
+            Optional<BooleanOpNode> newBooleanOp = booleanOpNode();
+            if(newBooleanOp.isPresent()) {
+                BooleanOp.get().right = newBooleanOp.get();
+            }
+        }
+        if(tokens.matchAndRemove(Token.TokenTypes.NOT).isPresent()){
+            Optional<BooleanOpNode> newBooleanOp = booleanOpNode();
+            if(newBooleanOp.isPresent()) {
+                BooleanOp.get().left = newBooleanOp.get();
+            }
+
         }
         return BooleanOp;
     }
 
-    private Optional<BooleanLiteralNode> BooleanLiteralNode(boolean value) throws SyntaxErrorException {
-        Optional<BooleanLiteralNode> BooleanLit = Optional.of(new BooleanLiteralNode(value));
-        return null;
+    private Optional<CompareNode> compareNode() throws SyntaxErrorException{
+        Optional<CompareNode> compare = Optional.of(new CompareNode());
+        Optional<MethodCallExpressionNode> methodCallCheck = MethodCallExpressionNode();
+        if(methodCallCheck.isPresent()) {
+            return Optional.of(compare.get());}
+        Optional<ExpressionNode> expressionCheck = expressionNode();
+        if(expressionCheck.isPresent()) {
+            compare.get().left = expressionCheck.get();
+            if (tokens.matchAndRemove(Token.TokenTypes.LESSTHAN).isPresent()) {
+                compare.get().op = CompareNode.CompareOperations.lt;
+            } else if (tokens.matchAndRemove(Token.TokenTypes.LESSTHANEQUAL).isPresent()) {
+                compare.get().op = CompareNode.CompareOperations.le;
+            } else if (tokens.matchAndRemove(Token.TokenTypes.GREATERTHAN).isPresent()) {
+                compare.get().op = CompareNode.CompareOperations.gt;
+            } else if (tokens.matchAndRemove(Token.TokenTypes.GREATERTHANEQUAL).isPresent()) {
+                compare.get().op = CompareNode.CompareOperations.ge;
+            } else if (tokens.matchAndRemove(Token.TokenTypes.EQUAL).isPresent()) {
+                compare.get().op = CompareNode.CompareOperations.eq;
+            }else if(tokens.matchAndRemove(Token.TokenTypes.NOTEQUAL).isPresent()) {
+                compare.get().op = CompareNode.CompareOperations.ne;
+            }else{
+                throw new SyntaxErrorException("unexpected token",0,0);
+            }
+        }
+        Optional<VariableReferenceNode> variableCheck = VariableReferenceNode();
+        if(variableCheck.isPresent()) {
+            return Optional.of(compare.get());
+        }
+        return Optional.empty();
     }
 
-    private Optional<BooleanOpNode> BooleanOpNode() throws SyntaxErrorException{
-        Optional<BooleanOpNode> BooleanOp = Optional.of(new BooleanOpNode());
-        Optional<Token> nameCheck = tokens.matchAndRemove(Token.TokenTypes.WORD);
+
+    private Optional<MethodCallExpressionNode> MethodCallExpressionNode() throws SyntaxErrorException {
+        return Optional.of(new MethodCallExpressionNode());
+        /*
+        Optional<MethodCallExpressionNode> MethodCall = Optional.of(new MethodCallExpressionNode());
+        tokens.matchAndRemove(Token.TokenTypes.WORD);
+        if(tokens.matchAndRemove(Token.TokenTypes.DOT).isPresent()){
+            tokens.matchAndRemove(Token.TokenTypes.WORD);}
+        if(tokens.matchAndRemove(Token.TokenTypes.LPAREN).isPresent()){
+            throw new SyntaxErrorException("method call requires a parenthesis",0,0);}
+
+
+        if(tokens.matchAndRemove(Token.TokenTypes.RPAREN).isPresent()){
+            throw new SyntaxErrorException("method call requires a parenthesis",0,0);}
+         */
     }
+
+    private Optional<MethodCallStatementNode> MethodCallStatementNode() throws SyntaxErrorException {
+        Optional<MethodCallStatementNode> methodCall = Optional.of(new MethodCallStatementNode());
+        Optional<VariableReferenceNode> variableCheck = VariableReferenceNode();
+        if(variableCheck.isPresent()){
+            methodCall.get().returnValues.add(variableCheck.get());
+            while(tokens.matchAndRemove(Token.TokenTypes.COMMA).isPresent()){
+                variableCheck = VariableReferenceNode();
+                methodCall.get().returnValues.add(variableCheck.get());
+            }
+        }
+        if(tokens.matchAndRemove(Token.TokenTypes.EQUAL).isEmpty()){
+            throw new SyntaxErrorException("method requires a equal",0,0);
+        }
+        Optional<MethodCallExpressionNode> methodCallExpressionNode = MethodCallExpressionNode();
+        if(methodCallExpressionNode.isPresent()){
+            methodCall.get().methodName = methodCallExpressionNode.get().methodName;
+        }
+        return methodCall;
+    }
+    /*
+    private Optional<Node> FactorNode() throws SyntaxErrorException {
+        if(NumericLiteralNode().isPresent()){
+            return Optional.of(NumericLiteralNode().get());}
+        if(VariableReferenceNode().isPresent()){
+            return Optional.of(VariableReferenceNode().get());}
+
+    }
+
      */
+    private Optional<StatementNode> disambiguate() throws SyntaxErrorException {
+        Optional<MethodCallExpressionNode> methodCallCheck = MethodCallExpressionNode();
+        if(methodCallCheck.isPresent()){
+             Optional<MethodCallStatementNode> methodCallStatementNode = MethodCallStatementNode();
+             if(methodCallStatementNode.isPresent()){
+                 return Optional.of(methodCallStatementNode.get());
+             }
+        }
+        Optional<VariableReferenceNode> variableCheck = VariableReferenceNode();
+        if(variableCheck.isPresent()){
+            return Optional.empty();}
+        if(tokens.matchAndRemove(Token.TokenTypes.COMMA).isPresent()){
+            Optional<MethodCallStatementNode> methodCall = MethodCallStatementNode();
+            if(methodCall.isPresent()){
+                return Optional.of(methodCall.get());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<NumericLiteralNode> NumericLiteralNode() throws SyntaxErrorException {
+        Optional<NumericLiteralNode> NumericLiteral = Optional.of(new NumericLiteralNode());
+        Optional<Token> numberCheck = tokens.matchAndRemove(Token.TokenTypes.NUMBER);
+        if(numberCheck.isEmpty()) {
+            return Optional.empty();}
+        NumericLiteral.get().value = Float.parseFloat(numberCheck.get().getValue());
+        return NumericLiteral;
+    }
+
+    private Optional<VariableReferenceNode> VariableReferenceNode() throws SyntaxErrorException {
+        Optional<VariableReferenceNode> VariableReference = Optional.of(new VariableReferenceNode());
+        Optional<Token> nameCheck = tokens.matchAndRemove(Token.TokenTypes.WORD);
+        if(nameCheck.isEmpty()) {
+            return Optional.empty();}
+        VariableReference.get().name = nameCheck.get().getValue();
+        return VariableReference;
+    }
 
     private Optional<MethodHeaderNode> methodHeaderNode() throws SyntaxErrorException {
         Optional<MethodHeaderNode> method = Optional.of(new MethodHeaderNode());
@@ -359,7 +478,6 @@ public class Parser {
         }
         return Optional.empty();
     }
-
 
     // Tran = { Class | Interface }
     public void Tran() throws SyntaxErrorException {
