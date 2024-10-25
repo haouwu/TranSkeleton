@@ -24,7 +24,7 @@ public class TokenManager {
     }
 
     public Optional<Token> peek(int i) {
-        if(i <= tokenList.size()) {
+        if(i < tokenList.size()) {
             return Optional.ofNullable(tokenList.get(position + i));
         }
         return Optional.empty();

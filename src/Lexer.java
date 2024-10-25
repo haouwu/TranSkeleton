@@ -109,11 +109,13 @@ public class Lexer {
 
             }else if(columnNumber == 0){
                 while(C.toString().equals("\t")){
-                    columnNumber += 4;
-                    text.position ++;
+                    C = text.getCharacter();
                     C = text.peekCharacter();
-                    ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
-                    indentLevel++;
+                    columnNumber += 4;
+                    if(previousColumn < columnNumber){
+                        ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
+                        indentLevel++;
+                    }
                 }
                 while(Character.isWhitespace(C)){
                     C = text.getCharacter();

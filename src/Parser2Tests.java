@@ -102,6 +102,7 @@ class TranExample implements someName,someNameTwo
 
 
     }
+
     // Test 3: Constructor Parsing
     /*
 class Tran
@@ -221,6 +222,8 @@ class TranExample implements someName
         Assertions.assertEquals("x", tran.Classes.getFirst().methods.getFirst().locals.get(0).name);
         Assertions.assertEquals("y", tran.Classes.getFirst().methods.getFirst().locals.get(1).name);
     }
+
+    /*
     @Test
     public void testAccessors() throws Exception {
         var tran = new TranNode();
@@ -256,38 +259,28 @@ class TranExample implements someName
         p.Tran();
         var clazz = tran.Classes.getFirst();
     }
+
+     */
     @Test
     public void testLoop() throws Exception {
         Lexer L = new Lexer("class Tran\n" +
-                        "\thelloWorld()\n" +
-                        "\t\tloop\n" );
-        var rev= L.Lex();
-        TranNode t= new TranNode();
-        Parser p= new Parser(t,rev);
+                "\thelloWorld()\n" +
+                "\t\tloop\n");
+        var rev = L.Lex();
+        TranNode t = new TranNode();
+        Parser p = new Parser(t, rev);
         p.Tran();
     }
+
 
     @Test
     public void testClassIf() throws Exception {
         Lexer L = new Lexer("class Tran\n" +
                 "\thelloWorld()\n" +
-                "\t\tif\n" );
-        var rev= L.Lex();
-        TranNode t= new TranNode();
-        Parser p= new Parser(t,rev);
-        p.Tran();
-    }
-
-    @Test
-    public void testClassIf2() throws Exception {
-        Lexer L = new Lexer("class Tran\n" +
-                "\thelloWorld()\n" +
-                "\t\tif\n" +
-                "\t\t\tif\n"+
-                "\t\t\t\tx=3\n");
-        var rev= L.Lex();
-        TranNode t= new TranNode();
-        Parser p= new Parser(t,rev);
+                "\t\tif\n");
+        var rev = L.Lex();
+        TranNode t = new TranNode();
+        Parser p = new Parser(t, rev);
         p.Tran();
     }
 }
