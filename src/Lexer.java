@@ -96,6 +96,7 @@ public class Lexer {
 
             }else if(C.toString().equals("\"") || C.toString().equals("'")) {
                 ListOfTokens.add(parseQuotated());
+                text.getCharacter();
 
             }else if(C.toString().equals("{")) {
                 while (!C.toString().equals("}")) {
@@ -269,9 +270,7 @@ public class Lexer {
             if(!C.toString().equals("'")) {
                 throw new SyntaxErrorException("",lineNumber,columnNumber);
             }
-            text.getCharacter();
         }
-
         if(C.toString().equals("\"")) {
             return new Token(Token.TokenTypes.QUOTEDSTRING, lineNumber, columnNumber, currentWord.toString());
         }else {

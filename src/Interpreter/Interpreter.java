@@ -9,7 +9,6 @@ import java.util.Optional;
 
 public class Interpreter {
     private TranNode top;
-
     /** Constructor - get the interpreter ready to run. Set members from parameters and "prepare" the class.
      *
      * Store the tran node.
@@ -17,6 +16,8 @@ public class Interpreter {
      * @param top - the head of the AST
      */
     public Interpreter(TranNode top) {
+        top = top;
+
     }
 
     /**
