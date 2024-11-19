@@ -3,7 +3,7 @@ package AST;
 import java.util.ArrayList;
 import java.util.List;
 
-public class    ClassNode implements Node {
+public class ClassNode implements Node {
     public String name;
     public List<String> interfaces = new ArrayList<>();
 
