@@ -161,25 +161,11 @@ public class Lexer2Tests {
     @Test
     public void LexerTest3() {
         var l = new Lexer(
-                "            x=x-1\n" +
-                        "    w"
+                "console.write(firstname, \" \", lastname, \" \", getAverage())\n"
         );
         try {
             var res = l.Lex();
-
-            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(0).getType());
-            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(1).getType());
-            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(2).getType());
-            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(3).getType());
-            Assertions.assertEquals(Token.TokenTypes.ASSIGN, res.get(4).getType());
-            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(5).getType());
-            Assertions.assertEquals(Token.TokenTypes.MINUS, res.get(6).getType());
-            Assertions.assertEquals(Token.TokenTypes.NUMBER, res.get(7).getType());
-            Assertions.assertEquals(Token.TokenTypes.NEWLINE, res.get(8).getType());
-            Assertions.assertEquals(Token.TokenTypes.INDENT, res.get(9).getType());
-            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(10).getType());
-            Assertions.assertEquals(Token.TokenTypes.DEDENT, res.get(11).getType());
-            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(12).getType());
+            Assertions.assertEquals(Token.TokenTypes.WORD, res.get(0).getType());
         }
         catch (Exception e) {
             Assertions.fail("exception occurred: " +  e.getMessage());

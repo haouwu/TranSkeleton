@@ -2,8 +2,6 @@ package Interpreter;
 
 import AST.*;
 
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class Interpreter {
@@ -76,11 +74,18 @@ public class Interpreter {
         List<InterpreterDataType> parameters = getParameters(object, locals, mc);
         MethodDeclarationNode method = getMethodFromObject(object.get(), mc, parameters);
         String objectName = object.get().astNode.name;
-        if(objectName == null) {
-            return interpretMethodCall(Optional.empty(), method, parameters);
+        if(mc.objectName == null) {
+            return interpretMethodCall(object, method, parameters);
         }else if(getClassByName(objectName).isPresent() && method.isShared){
             return interpretMethodCall(object, method, parameters);
-        }else if(locals.containsKey(mc.objectName.get()) || object.get().members.containsKey(mc.objectName.get())){
+        }else if(object.get().members.containsKey(mc.objectName.get())){
+            return interpretMethodCall(object, method, parameters);
+        }else if(locals.containsKey(mc.objectName.get())){
+            InterpreterDataType reference = locals.get(mc.objectName.get());
+            if(reference instanceof ReferenceIDT) {
+                Optional<ObjectIDT> localObject = ((ReferenceIDT) reference).refersTo;
+                return interpretMethodCall(localObject, method, parameters);
+            }
             return interpretMethodCall(object, method, parameters);
         }
         throw new Exception("no such method exists");
@@ -117,7 +122,10 @@ public class Interpreter {
             throw new Exception("types do not match");
         }
         interpretStatementBlock(object, m.statements,locals);
-
+        for(int i = 0; i< m.returns.size(); i++) {
+            InterpreterDataType returnVal = object.get().members.get(m.returns.get(i).name);
+            retVal.add(returnVal);
+        }
         return retVal;
     }
 
@@ -144,7 +152,7 @@ public class Interpreter {
         }
         for(int i = 0; i < className.get().constructors.size(); i++) {
             if (doesConstructorMatch(className.get().constructors.get(i), mc,IDTs)){
-                interpretConstructorCall(callerObj.get(), className.get().constructors.get(i), IDTs);
+                interpretConstructorCall(newOne, className.get().constructors.get(i), IDTs);
             }
         }
     }
@@ -161,19 +169,18 @@ public class Interpreter {
      * @param values - the parameter values being passed to the constructor
      */
     private void interpretConstructorCall(ObjectIDT object, ConstructorNode c, List<InterpreterDataType> values) throws Exception {
-        HashMap<String, InterpreterDataType> parameters = new HashMap<>();
-        for(int i = 0; i < c.locals.size(); i++) {
-            VariableDeclarationNode variable = c.locals.get(i);
-            parameters.put(variable.name,instantiate(variable.type));
-        }
-        for(int i = 0; i < parameters.size(); i++) {
+        HashMap<String, InterpreterDataType> locals = new HashMap<>();
+        for(int i = 0; i < c.parameters.size(); i++) {
             VariableDeclarationNode variable = c.parameters.get(i);
-            if(parameters.get(variable.name) != values.get(i)) {
-                throw new Exception("incompatible types");
-            }
-            parameters.put(variable.name,values.get(i));
+            locals.put(variable.name,instantiate(variable.type));
         }
-        interpretStatementBlock(Optional.of(object),c.statements,parameters);
+        if(values.size() != locals.size()) {
+            throw new Exception("number of values do not match");
+        }
+        for(int i = 0; i < c.parameters.size(); i++) {
+            locals.put(c.parameters.get(i).name,values.get(i));
+        }
+        interpretStatementBlock(Optional.of(object),c.statements, locals);
     }
 
     //              Running Instructions
@@ -216,15 +223,23 @@ public class Interpreter {
                 ExpressionNode expression = ((LoopNode) stmt).expression;
                 if(expression instanceof BooleanOpNode){
                     BooleanIDT expressionEqual = (BooleanIDT) evaluate(locals, object, expression);
-                    if(expressionEqual.Value) {
+                    while(expressionEqual.Value) {
                         interpretStatementBlock(object, ((LoopNode) stmt).statements, locals);
+                        expressionEqual = (BooleanIDT) evaluate(locals, object, expression);
                     }
                 }else if(expression instanceof AssignmentNode){
                     InterpreterDataType target = findVariable(((AssignmentNode) expression).target.name, locals, object);
                     target.Assign(evaluate(locals, object, ((AssignmentNode)expression).expression));
                     BooleanIDT expressionEqual = (BooleanIDT) evaluate(locals, object, expression);
-                    if(expressionEqual.Value) {
+                    while(expressionEqual.Value) {
                         interpretStatementBlock(object, ((LoopNode) stmt).statements, locals);
+                        expressionEqual = (BooleanIDT) evaluate(locals, object, expression);
+                    }
+                }else if(expression instanceof VariableReferenceNode){
+                    BooleanIDT expressionEqual = (BooleanIDT) evaluate(locals, object, expression);
+                    while(expressionEqual.Value) {
+                        interpretStatementBlock(object, ((LoopNode) stmt).statements, locals);
+                        expressionEqual = (BooleanIDT) evaluate(locals, object, expression);
                     }
                 }
 
@@ -235,7 +250,7 @@ public class Interpreter {
                 if(expressionEqual.Value) {
                     interpretStatementBlock(object, ((IfNode) stmt).statements, locals);
                 }else{
-                    interpretStatementBlock(object, ((IfNode) stmt).statements, locals);
+                    interpretStatementBlock(object, ((IfNode) stmt).elseStatement.get().statements, locals);
                 }
             }
         }
@@ -318,6 +333,12 @@ public class Interpreter {
             ObjectIDT newObject = new ObjectIDT(getClassByName(method.methodName).get());
             findConstructorAndRunIt(object, locals, method, newObject);
             return newObject;
+        }else if(expression instanceof MethodCallExpressionNode){
+            MethodCallStatementNode method = new MethodCallStatementNode();
+            method.methodName = ((MethodCallExpressionNode) expression).methodName;
+            method.parameters = ((MethodCallExpressionNode) expression).parameters;
+            List<InterpreterDataType> methodReturns = findMethodForMethodCallAndRunIt(object, locals, method);
+            return methodReturns.get(0);
         }
         throw new IllegalArgumentException();
     }
@@ -368,7 +389,7 @@ public class Interpreter {
         Iterator<InterpreterDataType> iterator = parameters.listIterator();
         for(ExpressionNode p : mc.parameters) {
             InterpreterDataType parameter = iterator.next();
-            if (!p.equals(parameter)) {
+            if (typeMatchToIDT(p.toString(),parameter)) {
                 return false;
             }
         }
@@ -464,9 +485,19 @@ public class Interpreter {
         if(locals.containsKey(name)) {
             return locals.get(name);
         }
-        for(int i = 0; i<object.get().members.size(); i++){
-            if(object.get().members.containsKey(name)){
-                return object.get().members.get(name);
+        if(object.get().members.containsKey(name)){
+            return object.get().members.get(name);
+        }
+        List<MethodDeclarationNode> methods = object.get().astNode.methods;
+        for (MethodDeclarationNode method : methods) {
+            if (!method.returns.isEmpty()) {
+                for (int j = 0; j < method.returns.size(); j++) {
+                    if (method.returns.get(j).name.equals(name)) {
+                        InterpreterDataType returnValue = instantiate(method.returns.get(j).type);
+                        object.get().members.put(name, returnValue);
+                        return object.get().members.get(name);
+                    }
+                }
             }
         }
         for (int i = 0; i < object.get().astNode.members.size(); i++) {

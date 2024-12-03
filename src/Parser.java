@@ -82,6 +82,7 @@ public class Parser {
                     if (tokens.matchAndRemove(Token.TokenTypes.DEDENT).isEmpty()) {
                         throw new SyntaxErrorException("constructor requires a dedent", tokens.getCurrentLine(), tokens.getCurrentColumnNumber());
                     }
+                    RequireNewLine();
                 }
             } else if (memberCheck.isPresent()) {
                 memberCheck.ifPresent(memberNode -> class1.get().members.add(memberNode));
@@ -238,7 +239,7 @@ public class Parser {
 
     private Optional<StatementNode> ifNode() throws SyntaxErrorException {
         Optional<IfNode> ifNode = Optional.of(new IfNode());
-        Optional<BooleanOpNode> conditionCheck = booleanOpNode();
+        Optional<ExpressionNode> conditionCheck = compareNode();
         ifNode.get().statements = new ArrayList<>();
         ifNode.get().elseStatement = Optional.empty();
         if(conditionCheck.isEmpty()){
@@ -258,11 +259,30 @@ public class Parser {
                 }
             }
         }
-        /*
-        Optional<Token> elseNode = tokens.matchAndRemove(Token.TokenTypes.ELSE);
-        elseNode.ifPresent(token -> ifNode.get().statements.add((StatementNode) token));
-        return Optional.of(new IfNode());
-         */
+        Optional<Token> elseCheck = tokens.peek(1);
+        if(elseCheck.get().getType() == Token.TokenTypes.ELSE){
+            tokens.matchAndRemove(Token.TokenTypes.DEDENT);
+            tokens.matchAndRemove(Token.TokenTypes.ELSE);
+            Optional<ElseNode> elseNode = Optional.of(new ElseNode());
+            elseNode.get().statements = new ArrayList<>();
+            RequireNewLine();
+            if(tokens.matchAndRemove(Token.TokenTypes.INDENT).isPresent()){
+                Optional<StatementNode> statementCheck = statementNode();
+                if(statementCheck.isPresent()){
+                    elseNode.get().statements.add(statementCheck.get());
+                    statementCheck = statementNodes();
+                    RequireNewLine();
+                    while(statementCheck.isPresent()){
+                        elseNode.get().statements.add(statementCheck.get());
+                        statementCheck = statementNodes();
+                        RequireNewLine();
+                    }
+                }
+            }
+            ifNode.get().elseStatement = Optional.of(elseNode.get());
+            return Optional.of(ifNode.get());
+        }
+
         return Optional.of(ifNode.get());
     }
     /*
@@ -279,9 +299,12 @@ public class Parser {
         Optional<VariableReferenceNode> variableReferenceCheck = VariableReferenceNode();
         Optional<BooleanOpNode> booleanCheck = booleanOpNode();
         if(variableReferenceCheck.isPresent()){
-            loopNode.get().assignment = Optional.of(variableReferenceCheck.get());
+
             if(tokens.matchAndRemove(Token.TokenTypes.ASSIGN).isEmpty()){
-                throw new SyntaxErrorException("loop node needs a assign", tokens.getCurrentLine(), tokens.getCurrentColumnNumber());
+                loopNode.get().assignment = Optional.empty();
+                loopNode.get().expression = variableReferenceCheck.get();
+            }else{
+                loopNode.get().assignment = Optional.of(variableReferenceCheck.get());
             }
             Optional<MethodCallExpressionNode> methodCallCheck = MethodCallExpressionNode();
             if(methodCallCheck.isPresent()){
@@ -464,6 +487,8 @@ public class Parser {
                     newBooleanOp = booleanOpNode();
                 }
                 return Optional.of(BooleanOp.get());
+            }else{
+                return Optional.of(BooleanOp.get());
             }
 
         }else if(tokens.matchAndRemove(Token.TokenTypes.AND).isPresent()) {
@@ -543,7 +568,7 @@ public class Parser {
             MethodCall.get().methodName = nameCheck.get().getValue();
         }else if(PeekCheck.get().getType() == Token.TokenTypes.LPAREN) {
             Optional<Token> nameCheck = tokens.matchAndRemove(Token.TokenTypes.WORD);
-            MethodCall.get().objectName = Optional.of(nameCheck.get().getValue().toString());
+            MethodCall.get().methodName = nameCheck.get().getValue().toString();
             MethodCall.get().objectName = Optional.empty();
         }
         if(PeekCheck.get().getType() == Token.TokenTypes.LPAREN || PeekCheck.get().getType() == Token.TokenTypes.DOT) {
@@ -565,7 +590,7 @@ public class Parser {
                 }
             }
             if (tokens.matchAndRemove(Token.TokenTypes.RPAREN).isEmpty()) {
-                throw new SyntaxErrorException("method call requires a parenthesis", 0, 0);
+                throw new SyntaxErrorException("method call requires a parenthesis", tokens.getCurrentLine(), tokens.getCurrentColumnNumber());
             }
             return MethodCall;
         }
@@ -691,7 +716,7 @@ public class Parser {
         if(nameCheck.isPresent()) {
             newNode.get().className = nameCheck.get().getValue();
             if (tokens.matchAndRemove(Token.TokenTypes.LPAREN).isEmpty()) {
-                throw new SyntaxErrorException("Factor requires a parenthesis", 0, 0);
+                throw new SyntaxErrorException("Factor requires a parenthesis", tokens.getCurrentLine(), tokens.getCurrentColumnNumber());
             }
             Optional<ExpressionNode> expressionNode = expressionNode();
             if (expressionNode.isPresent()) {
@@ -707,7 +732,7 @@ public class Parser {
                 }
             }
             if (tokens.matchAndRemove(Token.TokenTypes.RPAREN).isEmpty()) {
-                throw new SyntaxErrorException("Factor requires a parenthesis", 0, 0);
+                throw new SyntaxErrorException("Factor requires a parenthesis", tokens.getCurrentLine(), tokens.getCurrentColumnNumber());
             }
         }
         return Optional.of(newNode.get());

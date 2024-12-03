@@ -158,6 +158,45 @@ public class Parser4Tests {
         Assertions.assertEquals(0, ((NewNode) ((AssignmentNode) firstStatement).expression).parameters.size());
 
 
-
+    }
+    @Test
+    public void student() throws Exception {
+        Lexer l = new Lexer("class student\n" +
+                "    number gradea\n" +
+                "    number gradeb\n" +
+                "    number gradec\n" +
+                "    string firstname\n" +
+                "    string lastname\n" +
+                "    \n" +
+                "    construct (string fname, string lname, number ga, number gb, number gc)\n" +
+                "        firstname = fname\n" +
+                "        lastname = lname\n" +
+                "        gradea = ga\n" +
+                "        gradeb = gb\n" +
+                "        gradec = gc\n" +
+                "    \n" +
+                "    getAverage() : number avg \n" +
+                "        avg = (gradea + gradeb + gradec)/3\n" +
+                "    \n" +
+                "    print() \n" +
+                "        console.write(firstname, \" \", lastname, \" \", getAverage())\n" +
+                "    \n" +
+                "    shared start()\n" +
+                "        student sa\n" +
+                "        student sb\n" +
+                "        student sc\n" +
+                "        sa = new student(\"michael\",\"phipps\",100,99,98)\n" +
+                "        sb = new student(\"tom\",\"johnson\",80,75,83)\n" +
+                "        sc = new student(\"bart\",\"simpson\",32,25,33)\n" +
+                "        sa.print()\n" +
+                "        sb.print()\n" +
+                "        sc.print()\n");
+        var rev = l.Lex();
+        TranNode TN = new TranNode();
+        Parser p = new Parser(TN, rev);
+        p.Tran();
+        var firstStatement = TN.Classes.get(0).methods.get(0).statements.getFirst();
+        Assertions.assertInstanceOf(AssignmentNode.class, firstStatement);
+        Assertions.assertEquals(true, ((BooleanLiteralNode) ((AssignmentNode) firstStatement).expression).value);
     }
 }

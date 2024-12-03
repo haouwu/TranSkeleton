@@ -96,7 +96,6 @@ public class Lexer {
 
             }else if(C.toString().equals("\"") || C.toString().equals("'")) {
                 ListOfTokens.add(parseQuotated());
-                text.getCharacter();
 
             }else if(C.toString().equals("{")) {
                 while (!C.toString().equals("}")) {
@@ -118,11 +117,11 @@ public class Lexer {
                         indentLevel++;
                     }
                 }
-                while(Character.isWhitespace(C)){
+                while(Character.isWhitespace(C) && C != '\n'){
                     C = text.getCharacter();
                     C = text.peekCharacter();
                     columnNumber++;
-                    if(previousColumn < columnNumber && columnNumber % 4 == 0){
+                    if(previousColumn < columnNumber && columnNumber % 4 == 0) {
                         ListOfTokens.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
                         indentLevel++;
                     }
@@ -130,7 +129,6 @@ public class Lexer {
                 if(!Character.isWhitespace(C) && columnNumber%4 != 0){
                     throw new SyntaxErrorException("Indent error",lineNumber,columnNumber);
                 }
-
                 if(previousColumn > columnNumber) {
                     int CurrentIndents = (previousColumn - columnNumber) / 4;
                     if(CurrentIndents < indentLevel){
@@ -274,6 +272,7 @@ public class Lexer {
         if(C.toString().equals("\"")) {
             return new Token(Token.TokenTypes.QUOTEDSTRING, lineNumber, columnNumber, currentWord.toString());
         }else {
+            C = text.getCharacter();
             return new Token(Token.TokenTypes.QUOTEDCHARACTER, lineNumber, columnNumber, currentWord.toString());
         }
     }

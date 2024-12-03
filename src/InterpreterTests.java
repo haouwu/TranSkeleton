@@ -94,7 +94,7 @@ public class InterpreterTests {
                          "        n = 0\n" +
                          "        keepGoing = true\n" +
                          "        loop keepGoing\n" +
-                         "        	  if n >= 15\n" +
+                         "            if n >= 15\n" +
                          "                keepGoing = false\n" +
                          "            else\n" +
                          "                n = n + 1\n" +
